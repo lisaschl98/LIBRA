@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+title: "LIBRA: Lithium-Ion Battery Recycling Assessment"
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Schlott
+    given-names: Lisa
+    affiliation: "Institute of Business Chemistry, University of Münster"
+version: "1.0"
+date-released: 2026-07-09
+doi: 10.5281/zenodo.21276866
+url: "https://github.com/lisaschl98/LIBRA"
+license: CC-BY-4.0
+repository-code: "https://github.com/lisaschl98/LIBRA"
+keywords:
+  - lithium-ion battery
+  - recycling
+  - techno-economic assessment
+  - life-cycle assessment
+  - streamlit

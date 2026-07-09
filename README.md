@@ -1,6 +1,6 @@
 # LIBRA — Lithium-Ion Battery Recycling Assessment
 
-**Version:** 1.0
+**Version:** 1.0 · **DOI:** [10.5281/zenodo.21276866](https://doi.org/10.5281/zenodo.21276866)
 
 **LIBRA** is a process-based techno-economic and environmental assessment model for lithium-ion battery (LIB) recycling. It combines mass and energy balances, equipment sizing, CAPEX/OPEX estimation, revenue accounting, and life-cycle greenhouse-gas indicators in a single framework.
 
@@ -177,15 +177,21 @@ When referring to LIBRA results in a paper:
 
 ## Citation
 
-If you use LIBRA in academic work, please cite:
+If you use LIBRA in academic work, please cite the **concept DOI** (covers all versions):
+
+- **DOI:** [10.5281/zenodo.21276866](https://doi.org/10.5281/zenodo.21276866)
+- **Version 1.0:** [10.5281/zenodo.21276867](https://doi.org/10.5281/zenodo.21276867)
+- **Zenodo record:** [zenodo.org/records/21276867](https://zenodo.org/records/21276867)
 
 ```bibtex
 @software{libra2026,
-  author  = {Schlott, Lisa},
-  title   = {LIBRA: Lithium-Ion Battery Recycling Assessment},
-  year    = {2026},
-  institution = {Institute of Business Chemistry, University of Münster},
-  url     = {https://github.com/lisaschl98/LIBRA}
+  author    = {Schlott, Lisa},
+  title     = {LIBRA: Lithium-Ion Battery Recycling Assessment},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.21276866},
+  url       = {https://github.com/lisaschl98/LIBRA},
+  version   = {1.0}
 }
 ```
 
