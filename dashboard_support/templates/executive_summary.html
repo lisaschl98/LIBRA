@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>LIBRA Executive Summary</title>
+  <style>{{ css|safe }}</style>
+</head>
+<body>
+  <main class="page">
+    <header class="report-header">
+      <div>
+        <h1>LIBRA</h1>
+        <p class="subtitle">Lithium-Ion Battery Recycling Assessment</p>
+      </div>
+      {% if logo_data_uri %}
+      <img class="logo" src="{{ logo_data_uri }}" alt="Institute of Business Chemistry logo">
+      {% else %}
+      <div class="logo-fallback">Institute of<br>Business Chemistry</div>
+      {% endif %}
+      <dl class="metadata">
+        <div>
+          {% if scenario_icon_data_uri %}
+          <img class="meta-icon" src="{{ scenario_icon_data_uri }}" alt="">
+          {% endif %}
+          <dd>{{ scenario_name }}</dd>
+        </div>
+        <div>
+          {% if generated_icon_data_uri %}
+          <img class="meta-icon" src="{{ generated_icon_data_uri }}" alt="">
+          {% endif %}
+          <dd>{{ generated_at }}</dd>
+        </div>
+      </dl>
+    </header>
+
+    <section class="scenario-section">
+      <h2>1. Scenario Configuration</h2>
+      <div class="scenario-card card">
+        <div class="scenario-grid">
+          <div class="scenario-metric">
+            <span>Recycling route</span>
+            <strong>{{ route_label }}</strong>
+          </div>
+          <div class="scenario-metric">
+            <span>Refining route</span>
+            <strong>{{ refining_route }}</strong>
+          </div>
+          <div class="scenario-metric">
+            <span>Annual feed</span>
+            <strong>{{ feed_t_y }} t/y</strong>
+          </div>
+          <div class="scenario-metric">
+            <span>Operating hours</span>
+            <strong>{{ op_hours_y }} h/y</strong>
+          </div>
+        </div>
+        <div class="scenario-lower">
+          <div class="scenario-details">
+            <p><span>Feedstock</span>{{ feedstock_display }}</p>
+            <p><span>Plant concept</span>{{ plant_concept }}</p>
+          </div>
+          <div class="region-block">
+            <p><span>Region</span>{{ region }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="kpi-section">
+      <h2>2. Key Performance Indicators</h2>
+      <div class="kpi-grid">
+        <article class="kpi-card card economics kpi-{{ profit_class }}">
+          <h3>Economics</h3>
+          <div class="kpi-main">
+            <span>Profit</span>
+            <strong class="{{ profit_class }}">{{ profit_display }}</strong>
+            <small>$/kg feed processed</small>
+          </div>
+          <div class="kpi-secondary">
+            <div>
+              <span>Total Recycling Costs</span>
+              <strong>{{ trc_display }}</strong>
+              <small>$/kg feed processed</small>
+            </div>
+            <div>
+              <span>Revenue</span>
+              <strong>{{ revenue_display }}</strong>
+              <small>$/kg feed processed</small>
+            </div>
+          </div>
+          <div class="status {{ profit_class }}">{{ profit_status }}</div>
+        </article>
+
+        <article class="kpi-card card environmental kpi-{{ gwp_class }}">
+          <h3>Environmental</h3>
+          <div class="kpi-main">
+            <span>Net GWP</span>
+            <strong class="{{ gwp_class }}">{{ cf_display }}</strong>
+            <small>kg CO₂-eq/kg feed processed</small>
+          </div>
+          <div class="kpi-secondary">
+            <div>
+              <span>GWP burden</span>
+              <strong>{{ gwp_burden_display }}</strong>
+              <small>kg CO₂-eq/kg</small>
+            </div>
+            <div>
+              <span>GWP credit</span>
+              <strong>{{ gwp_credit_display }}</strong>
+              <small>kg CO₂-eq/kg</small>
+            </div>
+          </div>
+          <div class="status {{ gwp_class }}">{{ env_status }}</div>
+        </article>
+
+        <article class="kpi-card card recovery">
+          <h3>Recovery</h3>
+          <div class="recovery-list">
+            {% for item in recovery_summary %}
+            <div>
+              <strong>{{ item.value }}</strong>
+              <span>{{ item.label }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="process-section">
+      <h2>3. Process Flow</h2>
+      <div class="process-card card">
+        {% if process_flow_data_uri %}
+        <img class="process-flow" src="{{ process_flow_data_uri }}" alt="Process flow overview">
+        {% else %}
+        <div class="process-fallback">
+          <div class="flow-node feed">Feed Input</div>
+          <div class="flow-arrow"></div>
+          <div class="flow-node process">Front-End<br>Processing</div>
+          <div class="flow-arrow"></div>
+          <div class="flow-node stream">Black Mass</div>
+          <div class="flow-arrow"></div>
+          <div class="flow-node process blue">Hydrometallurgy</div>
+          <div class="flow-arrow"></div>
+          <div class="flow-node feed">Final Products</div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="process-legend">
+        <span><i class="legend-main"></i>Main flow</span>
+        <span><i class="legend-side"></i>Side streams / outputs</span>
+        <span><i class="legend-reagent"></i>Reagent input</span>
+      </div>
+    </section>
+
+    <footer class="report-footer">
+      <div class="footer-mark" aria-hidden="true">
+        {% if footer_icon_data_uri %}
+        <img class="footer-icon-img" src="{{ footer_icon_data_uri }}" alt="">
+        {% else %}
+        <span class="recycle-ring"></span>
+        <span class="battery-icon"></span>
+        {% endif %}
+      </div>
+      <div>
+        <strong>Generated with LIBRA</strong>
+        <span>Lithium-Ion Battery Recycling Assessment</span>
+      </div>
+      <span class="page-count">Page 1 of 2</span>
+      <span class="footer-copyright">© 2026 University Münster. All rights reserved.</span>
+    </footer>
+  </main>
+
+  <section class="page page-2">
+    <header class="detail-header">
+      <div>
+        <h1>LIBRA</h1>
+        <p>Lithium-Ion Battery Recycling Assessment</p>
+      </div>
+      {% if logo_data_uri %}
+      <img class="detail-logo" src="{{ logo_data_uri }}" alt="Institute of Business Chemistry logo">
+      {% else %}
+      <div class="logo-fallback">Institute of<br>Business Chemistry</div>
+      {% endif %}
+    </header>
+
+    <div class="detail-grid">
+      <article class="detail-card economic-detail">
+        <h2>4. Economic Breakdown</h2>
+        <div class="detail-subhead">
+          <span class="subhead-title">Economic Balance</span>
+          <small>$/kg feed processed</small>
+        </div>
+        <div class="economic-balance-area balance-chart">
+          {% if economic_balance_chart_data_uri %}
+          <img src="{{ economic_balance_chart_data_uri }}" alt="Economic balance chart">
+          {% else %}
+          <div class="chart-empty">Economic balance data not available</div>
+          {% endif %}
+          <div class="profit-badge">
+            <span>Profit</span>
+            <strong class="{{ profit_class }}">{{ profit_display }}</strong>
+            <small>$/kg feed</small>
+          </div>
+        </div>
+
+        <div class="insight-row economic-insight-row">
+          <div class="insight-box"><span class="bulb-icon" aria-hidden="true">$</span>{{ economic_insight }}</div>
+        </div>
+      </article>
+
+      <article class="detail-card environmental-detail">
+        <h2>5. Environmental Breakdown</h2>
+        <div class="detail-subhead">
+          <span class="subhead-title">Environmental Balance</span>
+          <small>kg CO₂-eq/kg feed processed</small>
+        </div>
+        <div class="environmental-balance-area balance-chart">
+          {% if environmental_balance_chart_data_uri %}
+          <img class="chart-img" src="{{ environmental_balance_chart_data_uri }}" alt="Environmental balance chart">
+          {% else %}
+          <div class="chart-empty small">Environmental balance data not available</div>
+          {% endif %}
+          <div>
+            <div class="env-badge {{ gwp_class }}">
+              <span>{{ env_status }}</span>
+              <strong class="{{ gwp_class }}">{{ cf_display }}</strong>
+              <small>kg CO₂-eq/kg feed</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-box environmental-insight"><span class="co2-icon" aria-hidden="true">CO₂</span>{{ gwp_insight }}</div>
+      </article>
+    </div>
+
+    <article class="detail-card product-detail">
+      <h2>6. Recycling Products</h2>
+      <div class="product-stage-grid">
+        {% for group in product_output_table.groups %}
+        <div class="product-stage-card stage-{{ group.key }}">
+          <h3>{{ group.title }}</h3>
+          <table class="product-stage-table">
+            <thead>
+              <tr><th>Product</th><th>Output<br><span class="product-unit">(kg/kg feed processed)</span></th><th>Revenue<br><span class="product-unit">($/kg feed processed)</span></th></tr>
+            </thead>
+            <tbody>
+              {% for row in group.rows %}
+              <tr><td>{{ row.product }}</td><td>{{ row.output }}</td><td>{{ row.revenue }}</td></tr>
+              {% else %}
+              <tr><td colspan="3">No Products</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="product-note-box">
+        <span class="product-arrow-icon" aria-hidden="true">
+          <img src="{{ product_icon_data_uri }}" alt="">
+        </span>
+        <p>Recovered products comprise battery-grade materials and secondary products for downstream recycling and manufacturing applications.</p>
+      </div>
+    </article>
+
+    <div class="detail-notes">
+      <strong>Notes</strong>
+      <p>Results are model-based estimations using LIBRA v1.0. Actual results may vary based on real-world conditions, market prices, and technological developments.</p>
+    </div>
+
+    <footer class="report-footer">
+      <div class="footer-mark" aria-hidden="true">
+        {% if footer_icon_data_uri %}
+        <img class="footer-icon-img" src="{{ footer_icon_data_uri }}" alt="">
+        {% else %}
+        <span class="recycle-ring"></span>
+        <span class="battery-icon"></span>
+        {% endif %}
+      </div>
+      <div>
+        <strong>Generated with LIBRA</strong>
+        <span>Lithium-Ion Battery Recycling Assessment</span>
+      </div>
+      <span class="page-count">Page 2 of 2</span>
+      <span class="footer-copyright">© 2026 University Münster. All rights reserved.</span>
+    </footer>
+  </section>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# path.py
+from __future__ import annotations
+import os
+
+# Base: directory containing path.py (= project root)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _resolve_input_dir() -> str:
+    """
+    Locate the Excel input folder (case-insensitive on Linux/Streamlit Cloud).
+    Repo standard name is ``Input``; ``input`` also works.
+    """
+    for name in ("Input", "input", "INPUT"):
+        candidate = os.path.join(BASE_DIR, name)
+        if os.path.isdir(candidate):
+            return candidate
+    return os.path.join(BASE_DIR, "Input")
+
+
+INPUT_DIR = _resolve_input_dir()
+
+# Input workbook paths
+COST_REGION_XLSX = os.path.join(INPUT_DIR, "Cost_GWP_Region_Values.xlsx")
+CELL_TECH_XLSX = os.path.join(INPUT_DIR, "Pack_Module_Cell_technologies.xlsx")
+EFF_XLSX = os.path.join(INPUT_DIR, "Recycling_Efficiencies_Configuration.xlsx")
+
+
+def assert_input_files() -> None:
+    """Raise a clear error if required Excel inputs are missing (e.g. not pushed to Git)."""
+    missing = [p for p in (COST_REGION_XLSX, CELL_TECH_XLSX, EFF_XLSX) if not os.path.isfile(p)]
+    if missing:
+        raise FileNotFoundError(
+            "Required Excel file(s) missing. Commit the Input/ folder to Git:\n"
+            + "\n".join(f"  - {p}" for p in missing)
+        )

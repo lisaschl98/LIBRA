@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.vscode/
+
+# Local outputs and internal validation workbooks
+Results.xlsx
+Tests_Masse/
+
+# Local tooling caches
+scripts/__pycache__/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
