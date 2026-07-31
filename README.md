@@ -52,6 +52,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
+Typical installation time: approximately 5–10 minutes on a standard desktop computer with a stable internet connection.
 ```
 
 ### Optional: PDF export (Playwright)
