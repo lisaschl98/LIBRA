@@ -210,8 +210,7 @@ Development of LIBRA was supported by the **ProRec** project (2023–2026), fund
 ---
 
 ## License
-
-This project is licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/) (CC BY 4.0).
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 You may redistribute and reuse this work if the creators are appropriately credited. See [`LICENSE`](LICENSE) for details.
 
