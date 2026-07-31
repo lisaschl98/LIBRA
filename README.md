@@ -82,6 +82,9 @@ streamlit run app_streamlit.py
 ```
 
 Open the local URL shown in the terminal (typically `http://localhost:8501`).
+Expected output: The dashboard displays mass and energy balances, techno-economic indicators (CAPEX, OPEX, revenues, profit), greenhouse gas emissions, and interactive visualizations for the selected recycling scenario.
+
+Typical runtime: Example scenarios typically execute in less than 10 seconds on a standard desktop computer.
 
 ### Run scenarios from Python
 
