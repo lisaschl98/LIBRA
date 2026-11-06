@@ -107,6 +107,10 @@ def run_hydro_lfp_graphite_filtration(
     row["Line capacity (t/h)"] = float(sizing.get("line_capacity_tph", 0.0))
     row["CAPEX equip ($)"] = float(sizing.get("capex_equip", 0.0))
     row["CAPEX building ($)"] = float(sizing.get("capex_building", 0.0))
+    row["CAPEX install ($)"] = float(sizing.get("capex_install_model", 0.0))
+    row["CAPEX instr ($)"] = float(sizing.get("capex_instr", 0.0))
+    row["CAPEX piping ($)"] = float(sizing.get("capex_piping", 0.0))
+    row["CAPEX electrical ($)"] = float(sizing.get("capex_electrical", 0.0))
     row["outputs_kg_h"] = [{"Graphite": float(graphite_h)}]
 
     extras = {step: {"breakdown": breakdown}}

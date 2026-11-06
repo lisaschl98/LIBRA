@@ -20,8 +20,22 @@ def _resolve_input_dir() -> str:
 
 INPUT_DIR = _resolve_input_dir()
 
+
+def _resolve_price_index_dir() -> str:
+    """FRED price-index workbooks live in ``Input/Price Index``."""
+    direct = os.path.join(INPUT_DIR, "Price Index")
+    if os.path.isdir(direct):
+        return direct
+    if os.path.isdir(INPUT_DIR):
+        for name in os.listdir(INPUT_DIR):
+            if name.casefold() == "price index" and os.path.isdir(os.path.join(INPUT_DIR, name)):
+                return os.path.join(INPUT_DIR, name)
+    return direct
+
+
 # Input workbook paths
 COST_REGION_XLSX = os.path.join(INPUT_DIR, "Cost_GWP_Region_Values.xlsx")
+PRICE_INDEX_DIR = _resolve_price_index_dir()
 CELL_TECH_XLSX = os.path.join(INPUT_DIR, "Pack_Module_Cell_technologies.xlsx")
 EFF_XLSX = os.path.join(INPUT_DIR, "Recycling_Efficiencies_Configuration.xlsx")
 
