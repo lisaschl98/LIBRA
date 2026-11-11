@@ -104,7 +104,7 @@ def run_hydro_nmc_leaching(
 
     pr = prices(ctx)
     water_price = float(pr.get("Water", 0.0))
-    water_cost_y = m_H2O_y * (water_price / 1000.0)
+    water_cost_y = m_H2O_y * water_price
 
     row = attach_opex_to_row(
         row,

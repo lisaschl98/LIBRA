@@ -103,7 +103,7 @@ def run_hydro_pyro_slag_leaching(
     pr = prices(ctx)
     m_h2o_y = m_h2o_h * h_y
     water_price = float(pr.get("Water", 0.0))
-    water_cost_y = m_h2o_y * (water_price / 1000.0)
+    water_cost_y = m_h2o_y * water_price
 
     row = attach_opex_to_row(
         row,

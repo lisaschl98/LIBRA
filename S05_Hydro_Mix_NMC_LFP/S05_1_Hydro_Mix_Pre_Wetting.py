@@ -111,8 +111,8 @@ def run_hydro_mix_pre_wetting(
 
     # 5) OPEX – water cost
     pr = prices(ctx)
-    water_price = float(pr.get("Water", 0.0))  # currency per m3
-    materials_cost_y = m_h2o_y * (water_price / 1000.0)  # approx. currency per kg
+    water_price = float(pr.get("Water", 0.0))  # currency per kg
+    materials_cost_y = m_h2o_y * water_price
 
     row = attach_opex_to_row(
         row,

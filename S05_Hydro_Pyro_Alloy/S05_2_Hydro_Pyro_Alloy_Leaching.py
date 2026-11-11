@@ -94,8 +94,8 @@ def run_hydro_pyro_alloy_leaching(
     # 5) OPEX: water as material cost
     pr = prices(ctx)
     m_h2o_y = m_h2o_h * h_y
-    water_price = float(pr.get("Water", 0.0))  # assumed currency/m3
-    water_cost_y = m_h2o_y * (water_price / 1000.0)  # convert kg -> m3
+    water_price = float(pr.get("Water", 0.0))  # currency per kg
+    water_cost_y = m_h2o_y * water_price
     row = attach_opex_to_row(
         row,
         machine=Eq.reactor,
