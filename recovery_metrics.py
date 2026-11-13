@@ -193,6 +193,10 @@ def _pyro_iron_hydroxide_iron_pool_fe_kg_h(
 def _nmc_precursor_fractions(nmc_code: str) -> tuple[float, float, float]:
     ratios = NMC_PRECURSOR_RULES.get(str(nmc_code), NMC_PRECURSOR_RULES["111"])
     x, y, z = float(ratios["ni"]), float(ratios["co"]), float(ratios["mn"])
+    total = x + y + z
+    if total <= 0.0:
+        return 0.0, 0.0, 0.0
+    x, y, z = x / total, y / total, z / total
     m_prec = x * float(MOLAR_MASS["Ni"]) + y * float(MOLAR_MASS["Co"]) + z * float(MOLAR_MASS["Mn"]) + 2.0 * _M_OH
     if m_prec <= 0.0:
         return 0.0, 0.0, 0.0
@@ -253,12 +257,13 @@ def _metal_from_sulfate_makeup_kg_h(row: pd.Series, metal: str) -> float:
     return m_salt * mm_metal / mm_salt
 
 
-def _nmc_precursor_feed_metals_kg_h(steps_df: pd.DataFrame | None) -> dict[str, float]:
+def _nmc_precursor_battery_shares(steps_df: pd.DataFrame | None) -> dict[str, float]:
     """
-    Ni/Co/Mn in precursor from battery lye only (NMC precipitation step).
+    Battery share of each metal inside the precipitated hydroxide.
 
-    Step rows label ``Ni from battery feed`` as total ``m_*_used`` after sulfate makeup
-    is already in ``comp_abs``; subtract equivalent metal from NiSO4/CoSO4/MnSO4 makeup.
+    ``Ni from battery feed`` is the total metal put into the solid, including sulfate
+    makeup. Filtration and washing scale that solid afterwards, so the share stays
+    valid on the dried product.
     """
     if steps_df is None or steps_df.empty or "Step" not in steps_df.columns:
         return {}
@@ -269,13 +274,17 @@ def _nmc_precursor_feed_metals_kg_h(steps_df: pd.DataFrame | None) -> dict[str, 
     for metal, col in _NMC_FEED_METAL_COLS.items():
         if col not in sub.columns:
             continue
-        total = 0.0
+        used = 0.0
+        battery = 0.0
         for _, row in sub.iterrows():
             m_used = _safe_float(row.get(col), 0.0)
             m_mk = _metal_from_sulfate_makeup_kg_h(row, metal)
-            total += max(0.0, m_used - m_mk)
-        if total > 0.0:
-            out[metal] = total
+            used += m_used
+            battery += max(0.0, m_used - m_mk)
+        if used > 0.0:
+            out[metal] = battery / used
+        else:
+            out[metal] = 0.0
     return out
 
 
@@ -284,13 +293,25 @@ def _nmc_precursor_feed_contrib_kg_per_kg(
     steps_df: pd.DataFrame | None,
     product_mass_kg_h: float,
 ) -> dict[str, float]:
-    """Recovery contributions for NMC precursor: only metals from battery feed, not makeup."""
+    """
+    Battery Ni/Co/Mn per kg of dried precursor.
+
+    The product mass already includes precipitation yield, filtration and washing.
+    Stoichiometry gives the metal in that mass; the precipitation share removes makeup.
+    """
     if not _is_nmc_precursor_product(product) or product_mass_kg_h <= 0.0:
         return {}
-    metals = _nmc_precursor_feed_metals_kg_h(steps_df)
-    if not metals:
+    shares = _nmc_precursor_battery_shares(steps_df)
+    if not shares:
         return {}
-    return {metal: mass_h / product_mass_kg_h for metal, mass_h in metals.items()}
+    ni_f, co_f, mn_f = _nmc_precursor_fractions(_nmc_code_from_product(product, "811"))
+    fracs = {"Ni": ni_f, "Co": co_f, "Mn": mn_f}
+    out: dict[str, float] = {}
+    for metal, frac in fracs.items():
+        if metal not in shares or frac <= 0.0:
+            continue
+        out[metal] = float(frac) * float(shares[metal])
+    return out
 
 
 def product_contributions_kg_per_kg(

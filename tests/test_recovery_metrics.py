@@ -18,6 +18,7 @@ from recovery_config import (
 from recovery_metrics import (
     _iter_feed_comp_kg_h,
     _nmc_precursor_feed_contrib_kg_per_kg,
+    _nmc_precursor_fractions,
     _product_output_lines_df,
     _product_recovery_contributions_kg_per_kg_product,
     _recovery_pct,
@@ -237,8 +238,11 @@ def test_nmc_precursor_recovery_excludes_makeup():
         ]
     )
     ni_battery_h = 4.0 - ni_from_mk
-    contrib_feed = _nmc_precursor_feed_contrib_kg_per_kg("NMC 811 Precursor", steps, product_mass_kg_h=20.0)
-    assert abs(contrib_feed["Ni"] - ni_battery_h / 20.0) < 1e-9
+    ni_share = ni_battery_h / 4.0
+    ni_frac, _, _ = _nmc_precursor_fractions("811")
+    product_h = 5.0
+    contrib_feed = _nmc_precursor_feed_contrib_kg_per_kg("NMC 811 Precursor", steps, product_mass_kg_h=product_h)
+    assert abs(contrib_feed["Ni"] - ni_frac * ni_share) < 1e-9
 
     ctx = {
         "hours_per_year": 8760.0,
@@ -254,10 +258,10 @@ def test_nmc_precursor_recovery_excludes_makeup():
             }
         ],
     }
-    podf = pd.DataFrame([{"Product": "NMC 811 Precursor", "Total mass (kg/y)": 20.0 * 8760.0}])
+    podf = pd.DataFrame([{"Product": "NMC 811 Precursor", "Total mass (kg/y)": product_h * 8760.0}])
     rec = build_recovery_table(podf, ctx, 8760.0, steps_df=steps)
     ni_row = rec[rec["Target"] == "Ni"].iloc[0]
-    assert abs(float(ni_row["Recovered mass (kg/y)"]) - ni_battery_h * 8760.0) < 1e-6
+    assert abs(float(ni_row["Recovered mass (kg/y)"]) - product_h * ni_frac * ni_share * 8760.0) < 1e-4
     assert float(ni_row["Recovery (%)"]) <= 100.0
 
 
