@@ -296,74 +296,21 @@ def nmc_filtration_apply_lye_split(
     loss_key: str = "loss",
 ) -> tuple[MassFlow, MassFlow, float, float, dict]:
     """
-    After EFF partition: separate NMC precursor solid; lye keeps liquid mass and solutes.
+    Report the filtration split already produced by EFF.
 
-    ``flow_in.mass`` is the liquid-only precipitate outlet; solid mass lives in
-    ``nmc_precursor_solid_kg_h``. Reporting inlet = liquid + solid; lye NMC clean = liquid
-    (− loss). Solute masses (e.g. Li) are not scaled down when the solid leaves.
+    The inlet slurry contains the precursor solid. Precipitation has already
+    moved the unrecovered solid to the loss sink, and the filtration yield
+    keeps its share on the cake. This function does not put the cake back to
+    the stoichiometric mass.
     """
     import Recycling_Efficiencies as rfx
 
     meta_in = dict(getattr(flow_in, "meta", {}) or {})
-    m_solid_h = float(meta_in.get("nmc_precursor_solid_kg_h", 0.0) or 0.0)
-    m_in_liquid = float(flow_in.mass_kg_per_h)
-
+    m_in = float(flow_in.mass_kg_per_h)
     precursor_h = float(rfx.mf_get(outputs, precursor_key).mass_kg_per_h)
-    if m_solid_h > 1e-12:
-        precursor_h = m_solid_h
-
-    loss_h = float(rfx.mf_get(outputs, loss_key).mass_kg_per_h)
-    lye_h = max(0.0, m_in_liquid - loss_h)
-
-    lye_src = rfx.mf_get(outputs, forward_key)
-    lye_meta = dict(getattr(lye_src, "meta", {}) or {})
-    lye_comp = dict(lye_meta.get("comp_abs") or meta_in.get("comp_abs") or {})
-    for k in list(lye_comp.keys()):
-        if "nixcoymnz" in str(k).lower():
-            lye_comp.pop(k, None)
-    # Only adjust solvent gap — do not scale dissolved metals (Li, sulfates, …).
-    s_comp = float(sum(lye_comp.values()))
-    if lye_h > 1e-12 and s_comp < lye_h - 1e-9:
-        lye_comp["__untracked__"] = lye_comp.get("__untracked__", 0.0) + (lye_h - s_comp)
-    elif s_comp > lye_h + 1e-9 and s_comp > 0.0:
-        trim = s_comp - lye_h
-        if "__untracked__" in lye_comp and lye_comp["__untracked__"] >= trim:
-            lye_comp["__untracked__"] -= trim
-        else:
-            f = lye_h / s_comp
-            lye_comp = {k: v * f for k, v in lye_comp.items()}
-    lye_frac = {k: float(v) / lye_h for k, v in lye_comp.items()} if lye_h > 1e-12 else {}
-
-    lye_flow = MassFlow(
-        lye_h,
-        meta={**meta_in, "comp_abs": lye_comp, "comp": lye_frac},
-    )
-    prec_comp = _comp_abs_to_mass({"process:NixCoyMnz(OH)2": precursor_h}, precursor_h)
-    prec_frac = (
-        {k: float(v) / precursor_h for k, v in prec_comp.items()}
-        if precursor_h > 1e-12
-        else {}
-    )
-    precursor_flow = MassFlow(
-        precursor_h,
-        meta={"comp_abs": prec_comp, "comp": prec_frac},
-    )
-
-    outputs = dict(outputs)
-    outputs[forward_key] = lye_flow
-    outputs[precursor_key] = precursor_flow
-
-    comp_sizing = dict(meta_in.get("comp_abs") or {})
-    if m_solid_h > 0.0:
-        comp_sizing["process:NixCoyMnz(OH)2"] = (
-            float(comp_sizing.get("process:NixCoyMnz(OH)2", 0.0) or 0.0) + m_solid_h
-        )
-    flow_in_report = MassFlow(m_in_liquid + m_solid_h, meta=meta_in)
-    flow_sizing = MassFlow(
-        m_in_liquid + m_solid_h,
-        meta={**meta_in, "comp_abs": comp_sizing},
-    )
-    return flow_in_report, flow_sizing, lye_h, precursor_h, outputs
+    lye_h = float(rfx.mf_get(outputs, forward_key).mass_kg_per_h)
+    flow_report = MassFlow(m_in, meta=meta_in)
+    return flow_report, flow_report, lye_h, precursor_h, outputs
 
 
 def make_row(step: str, in_flow: MassFlow, out_flow: MassFlow, **extra) -> pd.DataFrame:

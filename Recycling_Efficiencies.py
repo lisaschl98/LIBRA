@@ -137,6 +137,7 @@ def load_eff_from_excel(xlsx_path: str) -> dict[str, dict]:
         # initialize partition & yield maps
         part: dict[str, dict] = {}
         yld: dict[str, float] = {}
+        ycomp: dict[str, float] = {}
         
         for _, row in sub.iterrows():
             t = row["Type"]
@@ -156,12 +157,17 @@ def load_eff_from_excel(xlsx_path: str) -> dict[str, dict]:
             elif t == "yield":
                 stream = key  # here key = stream name
                 yld[stream] = val
+            elif t == "yield_component":
+                # Key is one component. (1-value) of that component goes to loss_sink.
+                # Other components in the same stream are left unchanged.
+                ycomp[key] = val
             else:
                 # meta or empty -> ignore (only default_stream/loss_sink are relevant)
                 continue
         
         cfg["partition"] = part
         cfg["yield"] = yld
+        cfg["yield_component"] = ycomp
         
         eff[step] = cfg
     
@@ -196,14 +202,6 @@ _STEP_CFG_ALIASES = {
     "Hydro Mix – Li Drying": "Hydro NMC – Li Drying",
 }
 
-# Keep wash water on the wet solid for a downstream drying step (NMC-style routing).
-_LI_WASHING_OVERRIDE = {
-    "default_stream": "Lithium Carbonate washed",
-    "loss_sink": "loss",
-    "partition": {},
-    "yield": {"Lithium Carbonate washed": 1.0},
-}
-
 # Unified wastewater treatment: Na2SO4 side product + treated effluent forward.
 _WASTEWATER_TREATMENT_EFF = {
     "default_stream": "wastewater treated",
@@ -219,9 +217,6 @@ _ALLOY_WASTEWATER_TREATMENT_EFF = {
 }
 
 _STEP_CFG_OVERRIDES = {
-    "Hydro NMC – Li Washing": _LI_WASHING_OVERRIDE,
-    "Hydro Mix – Li Washing": _LI_WASHING_OVERRIDE,
-    "Hydro Pyro – Li Washing": _LI_WASHING_OVERRIDE,
     "Hydro Pyro – Li Wastewater Treatment": _WASTEWATER_TREATMENT_EFF,
     "Hydro NMC – Wastewater Treatment": _WASTEWATER_TREATMENT_EFF,
     "Hydro Mix – Wastewater Treatment": _WASTEWATER_TREATMENT_EFF,
@@ -262,6 +257,7 @@ def apply_step_cfg(step: str, flow_in, fallback_default_stream: str):
     loss_sink = str(cfg.get("loss_sink", "loss"))
     partition = cfg.get("partition") or {}
     yields = dict(cfg.get("yield") or {})
+    yield_component = dict(cfg.get("yield_component") or {})
 
     # Ensure pass-through if yield omitted for the forward/default stream
     yields.setdefault(default_stream, 1.0)
@@ -273,6 +269,7 @@ def apply_step_cfg(step: str, flow_in, fallback_default_stream: str):
         partition=partition,
         yields=yields,
         loss_sink=loss_sink,
+        yield_component=yield_component,
     )
 
 from Massflow import MassFlow
@@ -552,6 +549,51 @@ def build_outputs_from_comp_abs(streams_comp_abs: dict[str, dict], meta_in: dict
     return outputs
 
 
+def apply_component_yields(
+    streams_comp_abs: dict[str, dict],
+    yield_component: dict[str, float],
+    loss_sink: str = "loss",
+) -> dict[str, dict]:
+    """
+    yield_component: { "<comp_key>": yield_factor }.
+
+    Moves (1-y) of that component into loss_sink, wherever the component sits.
+    Other components in the same stream stay at their full mass.
+    """
+    out = {s: dict(d) for s, d in (streams_comp_abs or {}).items()}
+    loss_sink = str(loss_sink)
+    if not yield_component:
+        return out
+
+    for comp_key, y in yield_component.items():
+        y = max(0.0, min(1.0, float(y)))
+        if abs(y - 1.0) < 1e-12:
+            continue
+        for stream, d in list(out.items()):
+            if stream == loss_sink:
+                continue
+            actual = _resolve_comp_key(d, str(comp_key))
+            if actual not in d:
+                continue
+            v = float(d[actual])
+            kept = v * y
+            lost = v - kept
+            if abs(kept) > 1e-12:
+                d[actual] = kept
+            else:
+                d.pop(actual, None)
+            if abs(lost) > 1e-12:
+                out.setdefault(loss_sink, {})
+                out[loss_sink][actual] = float(out[loss_sink].get(actual, 0.0)) + lost
+
+    cleaned: dict[str, dict] = {}
+    for s, d in out.items():
+        dd = {k: v for k, v in (d or {}).items() if abs(float(v)) > 1e-12}
+        if dd:
+            cleaned[s] = dd
+    return cleaned
+
+
 def apply_partition_and_yield(
     step: str,
     flow_in,
@@ -559,6 +601,7 @@ def apply_partition_and_yield(
     partition: dict | None = None,
     yields: dict | None = None,
     loss_sink: str = "loss",
+    yield_component: dict | None = None,
 ):
     """
     Convenience wrapper:
@@ -573,6 +616,7 @@ def apply_partition_and_yield(
 
     streams = partition_comp_abs(comp_abs_in, partition or {}, default_stream=default_stream)
     streams = apply_yields(streams, yields or {}, loss_sink=loss_sink)
+    streams = apply_component_yields(streams, yield_component or {}, loss_sink=loss_sink)
     outputs = build_outputs_from_comp_abs(streams, meta_in=meta_in)
 
     return outputs
@@ -589,6 +633,19 @@ def step_cfg_to_dataframe() -> pd.DataFrame:
         loss_sink = cfg.get("loss_sink", "")
         partition = cfg.get("partition", {}) or {}
         yields = cfg.get("yield", {}) or {}
+        yield_component = cfg.get("yield_component", {}) or {}
+
+        for comp_key, y in yield_component.items():
+            rows.append(
+                {
+                    "Step": step,
+                    "Type": "yield_component",
+                    "Key": comp_key,
+                    "Value": float(y),
+                    "default_stream": default_stream,
+                    "loss_sink": loss_sink,
+                }
+            )
 
         # yields
         for stream, y in yields.items():
@@ -618,7 +675,7 @@ def step_cfg_to_dataframe() -> pd.DataFrame:
                 )
 
         # header row even if empty
-        if not partition and not yields:
+        if not partition and not yields and not yield_component:
             rows.append(
                 {
                     "Step": step,

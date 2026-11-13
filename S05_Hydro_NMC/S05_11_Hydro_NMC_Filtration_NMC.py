@@ -23,28 +23,16 @@ def run_hydro_nmc_filtration_nmc(
     S05_11: Hydro NMC – NMC Filtration.
 
     Streams (aligned with EFF):
-    - Input:  'lye precursor precipitation' (liquid; solid in ``nmc_precursor_solid_kg_h``)
-    - Output (Forward):   'lye NMC clean'  (= input liquid − NMC precursor)
-    - Output (Separated): 'NMC Precursor'
+    - Input:  'lye precursor precipitation' (slurry, solid already in the flow)
+    - Output (Forward):   'lye NMC clean'
+    - Output (Separated): 'NMC Precursor' (filtration yield applied, not reset)
     """
     p = params or {}
     step = "Hydro NMC – NMC Filtration"
     forward_key = "lye NMC clean"
     precursor_key = "NMC Precursor"
 
-    meta_in = dict(getattr(flow_in, "meta", {}) or {})
-    comp_abs = dict(meta_in.get("comp_abs") or {})
-    m_solid_h = float(meta_in.get("nmc_precursor_solid_kg_h", 0.0) or 0.0)
-    if m_solid_h > 0.0:
-        comp_abs["process:NixCoyMnz(OH)2"] = (
-            float(comp_abs.get("process:NixCoyMnz(OH)2", 0.0) or 0.0) + m_solid_h
-        )
-    flow_for_partition = MassFlow(
-        float(flow_in.mass_kg_per_h) + m_solid_h,
-        meta={**meta_in, "comp_abs": comp_abs},
-    )
-
-    outputs = rfx.apply_step_cfg(step, flow_for_partition, fallback_default_stream=forward_key)
+    outputs = rfx.apply_step_cfg(step, flow_in, fallback_default_stream=forward_key)
 
     cfg = rfx.get_step_cfg(step)
     loss_key = str(cfg.get("loss_sink", "loss"))

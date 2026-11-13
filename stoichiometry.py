@@ -41,10 +41,10 @@ MOLAR_MASS = {
     "FePO4": 150.82,
 }
 
-# FeC2O4·2H2O (ferrous oxalate dihydrate) — same basis as fe_oxalate_precipitation_stoich_kg_h
-MOLAR_MASS["FeC2O4_2H2O"] = (
-    float(MOLAR_MASS["Fe"]) + float(MOLAR_MASS["H2C2O4"]) + 2.0 * float(MOLAR_MASS["H2O"])
-)
+# FeC2O4·2H2O. The two protons of oxalic acid stay in solution, so the solid is
+# Fe + C2O4 + 2 H2O, not Fe + H2C2O4 + 2 H2O (that counted 2 H too many: 181.905).
+# 55.845 + (90.03 - 2*1.008) + 2*18.015 = 179.889, reported as 179.89 g/mol.
+MOLAR_MASS["FeC2O4_2H2O"] = 179.89
 
 
 SOLVENT_EXTRACTION_RULES = {
@@ -1311,7 +1311,7 @@ LI2CO3_PRECIPITATION_RULES = {
         "product_key": "process:Li2CO3",
         "na2co3_key": "process:Na2CO3",
         "na2so4_key": "process:Na2SO4",
-        "li_recovery_default": 1.0,
+        "li_recovery_default": 0.95,
         "na2co3_purity_default": 1.0,
         "na2co3_excess_default": 1.0,
     },
@@ -1321,7 +1321,7 @@ LI2CO3_PRECIPITATION_RULES = {
         "product_key": "process:Li2CO3",
         "na2co3_key": "process:Na2CO3",
         "na2so4_key": "process:Na2SO4",
-        "li_recovery_default": 1.0,
+        "li_recovery_default": 0.95,
         "na2co3_purity_default": 1.0,
         "na2co3_excess_default": 1.0,
     },
@@ -1331,7 +1331,7 @@ LI2CO3_PRECIPITATION_RULES = {
         "product_key": "process:Li2CO3",
         "na2co3_key": "process:Na2CO3",
         "na2so4_key": "process:Na2SO4",
-        "li_recovery_default": 1.0,
+        "li_recovery_default": 0.95,
         "na2co3_purity_default": 1.0,
         "na2co3_excess_default": 1.0,
     },
@@ -1349,6 +1349,10 @@ def li2co3_precipitation_stoich_kg_h(
     Li precipitation in sulfate liquor (analog to slag):
       Li2SO4 + Na2CO3 -> Li2CO3 + Na2SO4
 
+    Carbonate and sodium sulfate follow ``li_recovery`` of the dissolved lithium.
+    The unprecipitated lithium stays dissolved. Sodium carbonate is dosed on all
+    dissolved lithium (stoichiometric; the unrecovered share remains as excess).
+
     Returns:
       - m_li2co3_kg_h
       - m_na2co3_pure_kg_h
@@ -1358,10 +1362,7 @@ def li2co3_precipitation_stoich_kg_h(
       - n_li2co3_mol_h
     """
     m_li = _sum_by_suffixes(comp_abs, li_suffixes)
-    eta_li = max(0.0, float(li_recovery))
-    m_li_eff = m_li * eta_li
-
-    if m_li_eff <= 0.0:
+    if m_li <= 0.0:
         return {
             "m_li2co3_kg_h": 0.0,
             "m_na2co3_pure_kg_h": 0.0,
@@ -1371,20 +1372,22 @@ def li2co3_precipitation_stoich_kg_h(
             "n_li2co3_mol_h": 0.0,
         }
 
-    # 2 Li -> 1 Li2CO3
-    n_li = (m_li_eff * 1000.0) / float(MOLAR_MASS["Li"])
-    n_li2co3 = n_li / 2.0
+    eta_li = min(1.0, max(0.0, float(li_recovery)))
+    m_li_eff = m_li * eta_li
+
+    # 2 Li -> 1 Li2CO3. Reagent uses the full dissolved lithium, product only eta.
+    n_li2co3 = ((m_li_eff * 1000.0) / float(MOLAR_MASS["Li"])) / 2.0
+    n_li2co3_reagent = ((m_li * 1000.0) / float(MOLAR_MASS["Li"])) / 2.0
 
     m_li2co3 = (n_li2co3 * float(MOLAR_MASS["Li2CO3"])) / 1000.0
     m_li_used = (2.0 * n_li2co3 * float(MOLAR_MASS["Li"])) / 1000.0
 
-    # 1 mol Na2CO3 per mol Li2CO3
-    m_na2co3_pure = (n_li2co3 * float(MOLAR_MASS["Na2CO3"])) / 1000.0
+    m_na2co3_pure = (n_li2co3_reagent * float(MOLAR_MASS["Na2CO3"])) / 1000.0
     purity = max(1e-9, float(na2co3_purity))
     excess = max(1.0, float(na2co3_excess))
     m_na2co3_added = (m_na2co3_pure * excess) / purity
 
-    # 1 mol Na2SO4 formed per mol Li2CO3
+    # 1 mol Na2SO4 per mol Li2CO3 actually formed
     m_na2so4 = (n_li2co3 * float(MOLAR_MASS["Na2SO4"])) / 1000.0
 
     return {

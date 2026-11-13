@@ -189,11 +189,13 @@ def run_hydro_mix_precipitation_nmc(
         MassFlow(0.0, meta={"comp_abs": {}, "comp": {}}),
     )
     out_meta = dict(getattr(out_forward, "meta", {}) or {})
-    out_meta["nmc_precursor_solid_kg_h"] = float(m_nmc_solid_h)
+    fwd_comp = dict(out_meta.get("comp_abs") or {})
+    out_meta["nmc_precursor_solid_kg_h"] = float(fwd_comp.get("process:NixCoyMnz(OH)2", 0.0) or 0.0)
     out_meta["nmc_precursor_target_nominal_mol_h"] = float(
         meta.get("nmc_precursor_target_nominal_mol_h", 0.0) or reag.get("n_target_nominal_mol_h", 0.0) or 0.0
     )
     out_forward = MassFlow(float(out_forward.mass_kg_per_h), meta=out_meta)
+    outputs[forward_key] = out_forward
 
     design_load = float(p.get("design_load", 0.85))
     sizing = size_machine_for_mass(
